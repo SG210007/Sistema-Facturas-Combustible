@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturas de Combustible</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-gas-pump"></i>
+                <h1>Sistema de Control de Combustible</h1>
+            </div>
+            <div class="user-info">
+                <span id="current-date"></span>
+                <button class="btn btn-info" id="help-btn">
+                    <i class="fas fa-question-circle"></i> Ayuda
+                </button>
+            </div>
+        </header>
+
+        <!-- Panel de Estadísticas -->
+        <div class="stats-panel">
+            <div class="month-navigation">
+                <button class="btn btn-nav" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                <span id="current-month-display" class="month-display">Todos los meses</span>
+                <button class="btn btn-nav" id="next-month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div class="stat-content"><h3 id="total-facturas">0</h3><p>Facturas totales</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon diesel"><i class="fas fa-truck"></i></div>
+                <div class="stat-content"><h3 id="diesel-facturas">0</h3><p>DIESEL BAJO AZUFRE</p></div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-content"><h3 id="otras-facturas">0</h3><p>Otras facturas</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-content"><h3 id="total-monto">$0.00</h3><p>Total facturado</p></div>
+            </div>
+        </div>
+
+        <!-- Panel de Resumen Diario -->
+        <div class="daily-summary-panel" id="daily-summary-panel" style="display: none;">
+            <div class="daily-header">
+                <h3><i class="fas fa-calendar-day"></i> Total Facturado por Día</h3>
+                <div class="daily-search">
+                    <label for="day-picker">Buscar día:</label>
+                    <input type="date" id="day-picker" class="form-control">
+                    <span id="selected-day-info" class="selected-day-info"></span>
+                </div>
+            </div>
+            <div class="daily-summary-scroll" id="daily-summary-scroll">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Panel de Controles -->
+        <div class="controls-panel">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Buscar por código, número o descripción...">
+                <button class="btn btn-search"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="filter-controls">
+                <select id="filter-month">
+                    <option value="">Todos los meses</option>
+                    <option value="01">Enero</option><option value="02">Febrero</option>
+                    <option value="03">Marzo</option><option value="04">Abril</option>
+                    <option value="05">Mayo</option><option value="06">Junio</option>
+                    <option value="07">Julio</option><option value="08">Agosto</option>
+                    <option value="09">Septiembre</option><option value="10">Octubre</option>
+                    <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+                <select id="filter-type">
+                    <option value="">Todos los tipos</option>
+                    <option value="DIESEL BAJO AZUFRE">DIESEL BAJO AZUFRE</option>
+                    <option value="GASOLINA SUPER">GASOLINA SUPER</option>
+                    <option value="GASOLINA REGULAR">GASOLINA REGULAR</option>
+                    <option value="DIESEL REGULAR">DIESEL REGULAR</option>
+                    <option value="DIESEL AUTO">DIESEL AUTO</option>
+                    <option value="REGULAR AUTO">REGULAR AUTO</option>
+                    <option value="DIESEL S/C">DIESEL S/C</option>
+                    <option value="OTRO">Otros</option>
+                </select>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="add-invoice"><i class="fas fa-plus"></i> Nueva Factura</button>
+                <button class="btn btn-success" id="export-btn"><i class="fas fa-file-export"></i> Exportar</button>
+                <button class="btn btn-secondary" id="refresh-btn"><i class="fas fa-sync-alt"></i> Actualizar</button>
+            </div>
+        </div>
+
+        <!-- Tabla de Facturas -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2><i class="fas fa-list"></i> Facturas Registradas</h2>
+                <span class="badge" id="facturas-count">0 facturas</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="facturas-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> Código</th>
+                            <th><i class="fas fa-barcode"></i> N° Control</th>
+                            <th><i class="fas fa-calendar"></i> Fecha</th>
+                            <th><i class="fas fa-clock"></i> Hora</th>
+                            <th><i class="fas fa-weight"></i> Cantidad</th>
+                            <th><i class="fas fa-ruler"></i> Unidad</th>
+                            <th><i class="fas fa-gas-pump"></i> Descripción</th>
+                            <th><i class="fas fa-tag"></i> Precio Unit.</th>
+                            <th><i class="fas fa-chart-line"></i> Ventas Grav.</th>
+                            <th><i class="fas fa-road"></i> FOVIAL</th>
+                            <th><i class="fas fa-truck-moving"></i> COTRANS</th>
+                            <th><i class="fas fa-percentage"></i> IVA</th>
+                            <th><i class="fas fa-dollar-sign"></i> Total</th>
+                            <th><i class="fas fa-sticky-note"></i> Observaciones</th>
+                            <th><i class="fas fa-cogs"></i> Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facturas-body">
+                        <!-- Las facturas se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Totales -->
+        <div class="totals-panel">
+            <div class="total-item"><span>Total Ventas Gravadas:</span><strong id="total-ventas">$0.00</strong></div>
+            <div class="total-item"><span>Total FOVIAL:</span><strong id="total-fovial">$0.00</strong></div>
+            <div class="total-item"><span>Total COTRANS:</span><strong id="total-cotrans">$0.00</strong></div>
+            <div class="total-item"><span>Total IVA:</span><strong id="total-iva">$0.00</strong></div>
+            <div class="total-item grand-total"><span>TOTAL GENERAL:</span><strong id="total-general">$0.00</strong></div>
+        </div>
+
+        <!-- Panel de Depósitos Bancarios -->
+        <div class="depositos-panel">
+            <div class="depositos-header">
+                <div>
+                    <h2><i class="fas fa-building"></i> Depósitos Bancarios</h2>
+                    <span class="badge" id="depositos-count">0 depósitos</span>
+                </div>
+                <div class="depositos-stats">
+                    <div class="stat-box">
+                        <span>Total Depositado (Mes):</span>
+                        <strong id="total-depositado">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="depositos-controls">
+                <button class="btn btn-primary" id="add-deposito"><i class="fas fa-plus"></i> Nuevo Depósito</button>
+                <button class="btn btn-secondary" id="refresh-depositos"><i class="fas fa-sync-alt"></i> Actualizar</button>
+            </div>
+            <div class="table-wrapper">
+                <table id="depositos-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-dollar-sign"></i> Monto</th>
+                            <th><i class="fas fa-calendar"></i> Fecha</th>
+                            <th><i class="fas fa-file-alt"></i> Descripción</th>
+                            <th><i class="fas fa-hashtag"></i> Referencia</th>
+                            <th><i class="fas fa-cogs"></i> Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depositos-body">
+                        <!-- Los depósitos se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Sistema de Control de Facturas de Combustible • Versión 1.0 • 
+                <span id="facturas-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Las facturas NO DIESEL BAJO AZUFRE se muestran en <span class="highlight-red">rojo</span>
+                </span>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Modal para nueva/editar factura -->
+    <div id="invoice-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Nueva Factura de Combustible</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invoice-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="codigo"><i class="fas fa-code"></i> Código de Generación *</label>
+                            <input type="text" id="codigo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="numero"><i class="fas fa-barcode"></i> Número de Control *</label>
+                            <input type="text" id="numero" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fecha"><i class="fas fa-calendar"></i> Fecha (YYYY-MM-DD) *</label>
+                            <input type="text" id="fecha" placeholder="2026-02-03" pattern="\d{4}-\d{2}-\d{2}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora"><i class="fas fa-clock"></i> Hora *</label>
+                            <input type="time" id="hora" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cantidad"><i class="fas fa-weight-hanging"></i> Cantidad *</label>
+                            <input type="number" step="0.00001" id="cantidad" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="unidad"><i class="fas fa-balance-scale"></i> Unidad *</label>
+                            <select id="unidad" required>
+                                <option value="Galones">Galones</option>
+                                <option value="Litros">Litros</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="descripcion"><i class="fas fa-gas-pump"></i> Descripción *</label>
+                            <select id="descripcion" required>
+                                <option value="DIESEL BAJO AZUFRE">DIESEL BAJO AZUFRE</option>
+                                <option value="GASOLINA SUPER">GASOLINA SUPER CLEANTEC PRO</option>
+                                <option value="GASOLINA REGULAR">GASOLINA REGULAR</option>
+                                <option value="DIESEL REGULAR">DIESEL REGULAR</option>
+                                <option value="DIESEL AUTO">DIESEL AUTO</option>
+                                <option value="REGULAR AUTO">REGULAR AUTO</option>
+                                <option value="DIESEL S/C">DIESEL S/C</option>
+                                <option value="OTRO">OTRO</option>
+                            </select>
+                            <div class="form-note" id="diesel-note">
+                                <i class="fas fa-info-circle"></i> Factura normal
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="precio"><i class="fas fa-tag"></i> Precio Unitario ($) *</label>
+                            <input type="number" step="0.01" id="precio" required>
+                        </div>
+                        
+                        <!-- Campos manuales para impuestos -->
+                        <div class="form-group">
+                            <label for="fovial"><i class="fas fa-road"></i> FOVIAL ($) *</label>
+                            <input type="number" step="0.01" id="fovial" required value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="cotrans"><i class="fas fa-truck-moving"></i> COTRANS ($) *</label>
+                            <input type="number" step="0.01" id="cotrans" required value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="iva"><i class="fas fa-percentage"></i> IVA ($) *</label>
+                            <input type="number" step="0.01" id="iva" required value="0.00">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="observaciones"><i class="fas fa-sticky-note"></i> Observaciones</label>
+                            <textarea id="observaciones" rows="2"></textarea>
+                        </div>
+                        
+                        <!-- Cálculos automáticos -->
+                        <div class="calculations">
+                            <h3><i class="fas fa-calculator"></i> Cálculos Automáticos</h3>
+                            <div class="calc-grid">
+                                <div class="calc-item">
+                                    <span>Ventas Gravadas:</span>
+                                    <span id="calc-ventas">$0.00</span>
+                                </div>
+                                <div class="calc-item total">
+                                    <span>Total a Pagar:</span>
+                                    <span id="calc-total">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Factura
+                        </button>
+                        <button type="button" class="btn btn-secondary close-modal">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                    <input type="hidden" id="factura-id" value="">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para nuevo/editar depósito -->
+    <div id="deposito-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="deposito-modal-title">Nuevo Depósito Bancario</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="deposito-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="deposito-monto"><i class="fas fa-dollar-sign"></i> Monto ($) *</label>
+                            <input type="number" step="0.01" id="deposito-monto" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="deposito-fecha"><i class="fas fa-calendar"></i> Fecha (YYYY-MM-DD) *</label>
+                            <input type="text" id="deposito-fecha" placeholder="2026-02-03" pattern="\d{4}-\d{2}-\d{2}" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="deposito-descripcion"><i class="fas fa-file-alt"></i> Descripción *</label>
+                            <input type="text" id="deposito-descripcion" placeholder="Ej: Depósito por ventas de combustible" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="deposito-referencia"><i class="fas fa-hashtag"></i> Referencia *</label>
+                            <input type="text" id="deposito-referencia" placeholder="Ej: Transferencia, Cheque, Referencia bancaria" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Depósito
+                        </button>
+                        <button type="button" class="btn btn-secondary close-modal">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                    <input type="hidden" id="deposito-id" value="">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
